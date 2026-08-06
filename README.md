@@ -176,6 +176,7 @@ The daemon reacts to the change in states for both tlp's values and the `.conf` 
 
 - No option to control Tau (Time Window) for PL2 Turbo Boost yet.
 - No perodic update to RAPL registers, only event-driven on state change.
+- Default PL values detected vary whether the device is on charge or battery.
 - Only supports TLP
 - Only supports systemd system service
 - Only for Intel platforms
