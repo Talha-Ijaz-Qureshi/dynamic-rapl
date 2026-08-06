@@ -1,0 +1,283 @@
+{
+  "drapl": [
+    {
+      "topic": "Dynamic RAPL daemon",
+      "sections": [
+        {
+          "id": "overview",
+          "title": "Dynamic RAPL daemon for Intel laptops",
+          "intro": "Dynamic RAPL <b>drapl</b> is a lightweight Linux daemon for Intel processors that applies user-defined power limits dynamically based  on the system's active power profile and AC/battery power state.",
+          "subtopics": [
+            {
+              "title": "Overview",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Currently this program is only supported with TLP https://github.com/linrunner/TLP. It relies on its <b>Performance</b>, <b>Balanced</b> and <b>Power Saver</b> profiles, and  whether the system is on AC or battery. This effectively allows you to set limits for 6 independent power states. Intel RAPL (Running Average Power Limit) is a real-time energy consumption monitoring and enforcing power limits on the CPU. This program uses <b>intel-rapl-mmio</b> interface to directly update the PL1 and PL2 when it detects a change in power profile or power supply state."
+                },
+                {
+                  "type": "text",
+                  "value": "PL (Power Limit) are thresholds that determine the maximum wattage budget of a CPU at different performance states. These values vary drastically from CPU-to-CPU, it is completely dependent on the CPU model, laptop vendor, TDPs, cooling solutions and so on."
+                },
+                {
+                  "type": "text",
+                  "value": "- <b>PL2</b> Determines the absolute maximum power limit that the CPU is allowed to boost to for short-term tasks, it typically lasts anywhere from 1-28 seconds (Tau) by default to momentarily provide bursts of performance. These values are mostly representative of the maximum Turbo Boost wattages for the CPU.<br>- <b>PL1</b> Determines the average power limit the CPU can draw for long-term tasks, during sustained workloads. This is the power level PL2 will normally fallback on once power is continuously drawn from the system. It'll always be a much lower than PL2 but around the ballpark of the CPU's TDP."
+                },
+                {
+                  "type": "text",
+                  "value": "The program is a by-product of my insane obsession for battery life, optimisation, performance and controlling system parameters. It essentially is a fancier implementation of:"
+                },
+                {
+                  "type": "code",
+                  "value": "echo 75000000 | sudo tee /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0/constraint_1_power_limit_uw # 75W for PL2"
+                },
+                {
+                  "type": "text",
+                  "value": "Which is the original roots of this program, when I needed to manually control my laptop's power limits, an i7-11850H that boosts to 100+ watts that's just barely holding on to its \"intended\" performance window despite a vapour chamber heatsink and a liquid-metal mod burning palms and deafening me, or when I needed to push it to its absolute max, or when I needed it to last me all day and have it pinned at its lowest possible wattage (just barely functional and very stuttery, your mileage may vary)."
+                },
+                {
+                  "type": "text",
+                  "value": "It quickly became tedious having to update <b>constraint_1_power_limit_uw</b> and <b>constraint_0_power_limit_uw</b> to tie my ideal wattages to my workloads. So I found a way to set per-state wattages depending on what power profile TLP was currently active in, and whether if my system was connected to AC or on battery, allowing granular control for each state via a simple bash script and a watcher service. But I decided to flesh out the idea with this project since I can't recall any other well-known tool offering this exact [rather niche] solution."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "features",
+          "title": "Features",
+          "intro": "",
+          "subtopics": [
+            {
+              "title": "Key features of drapl",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "- Processor PL1 and PL2 configurable for 6 independent power states<br>- Dynamically updates power limits when you switch power profiles or switch AC/DC<br>- Auto-loads updated values when <b>/etc/drapl.conf</b> is changed and saved<br>- Re-applies configuration from suspend or hibernation<br>- <b>install.sh</b> auto-generates the <b>/etc/drapl.conf</b> with your system's original defaults"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "installation",
+          "title": "Installation",
+          "intro": "",
+          "subtopics": [
+            {
+              "title": "Prerequisites",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "- Intel platform<br>- TLP https://github.com/linrunner/TLP as your power management tool<br>- inotify-tools<br>- systemd"
+                },
+                {
+                  "type": "text",
+                  "value": "For Debian, Ubuntu, and derivatives"
+                },
+                {
+                  "type": "code",
+                  "value": "sudo apt install git inotify-tools"
+                },
+                {
+                  "type": "text",
+                  "value": "For RedHat, Fedora, and derivatives"
+                },
+                {
+                  "type": "code",
+                  "value": "sudo dnf install git inotify-tools"
+                },
+                {
+                  "type": "text",
+                  "value": "For Arch Linux, and derivatives"
+                },
+                {
+                  "type": "code",
+                  "value": "sudo pacman -S inotify-tools"
+                },
+                {
+                  "type": "text",
+                  "value": "For openSUSE"
+                },
+                {
+                  "type": "code",
+                  "value": "sudo zypper install inotify-tools"
+                }
+              ]
+            },
+            {
+              "title": "Quick Install",
+              "blocks": [
+                {
+                  "type": "code",
+                  "value": "git clone https://github.com/Talha-Ijaz-Qureshi/dynamic-rapl\ncd dynamic-rapl\nsudo ./install.sh",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "The script will automatically generate the <b>drapl.conf</b> file with your system's default power limits, and start the daemon."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "usage",
+          "title": "Usage",
+          "intro": "",
+          "subtopics": [
+            {
+              "title": "Configuration",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The 6 drapl profiles are stored in <b>/etc/drapl.conf</b>, each profile contains PL1 and PL2 values:"
+                },
+                {
+                  "type": "code",
+                  "value": "# AC Power Limits\n# Balanced\nAC_BAL_PL1=\nAC_BAL_PL2=\n\n# Performance\nAC_PERF_PL1=\nAC_PERF_PL2=\n\n# Power Saver\nAC_PS_PL1=\nAC_PS_PL2=\n\n# Battery Power Limits\n# Balanced\nBAT_BAL_PL1=\nBAT_BAL_PL2=\n\n# Performance\nBAT_PERF_PL1=\nBAT_PERF_PL2=\n\n# Power Saver\nBAT_PS_PL1=\nBAT_PS_PL2=",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "I recommend you study the TDP and the default PL values for your system, and experiment different values to determine the best solution for your system, you can adjust these profiles to either allow setting higher power budgets than your system originally enforced for higher performance, or throttle power for better efficiency."
+                },
+                {
+                  "type": "text",
+                  "value": "It is generally safe to set very high values as your system will automatically stay within the hardware limits, but you must ensure the system is well-cooled and not throttling more than expected to avoid overheating the laptop."
+                },
+                {
+                  "type": "text",
+                  "value": "Most power management tools focus on optimising performance via CPU scaling governers, EPP (Energy Performance Preference) and Turbo Boost, that dictate the processor's frequency, thus the power draw for the CPU. For example, if you choose to put 45W on power saver mode, TLP will by default be using the <b>power</b> EPP and Turbo Boost disabled, which limits the CPU to its base frequency (i.e 2.5GHz for my processor), so its power draw will be capped to a much lower number. The maximum power draw also depends on your laptop's AC or battery state. In my case, on AC, my i7-11850H can pull up to 115W, but only 65W at most on battery (even lower if the dGPU is enabled). This tool will ensure your system respects power draw limits on the CPU, but won't necessarily force your CPU to make full use of the limits, that's primiarily up to how your CPU governers, EPP and boost settings are configured. Default TLP settings should behave mostly as expected."
+                }
+              ]
+            },
+            {
+              "title": "Check the service",
+              "blocks": [
+                {
+                  "type": "code",
+                  "value": "sudo systemctl status dynamic-rapl.service"
+                }
+              ]
+            },
+            {
+              "title": "Force apply drapl profiles",
+              "blocks": [
+                {
+                  "type": "code",
+                  "value": "sudo /usr/local/bin/drapld --apply"
+                }
+              ]
+            },
+            {
+              "title": "Keep system defaults",
+              "blocks": [
+                {
+                  "type": "code",
+                  "value": "sudo systemctl stop dynamic-rapl.service\n# Your default values are stored in /etc/drapl.conf incase you forget, insert them below\necho <PL1>000000 | sudo tee /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0/constraint_0_power_limit_uw \necho <PL2>000000 | sudo tee /sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0/constraint_1_power_limit_uw ",
+                  "codeBlock": "multi"
+                }
+              ]
+            },
+            {
+              "title": "Uninstall drapl entirely",
+              "blocks": [
+                {
+                  "type": "code",
+                  "value": "sudo systemctl stop dynamic-rapl drapl-resume\nsudo systemctl disable dynamic-rapl drapl-resume\nsudo rm /etc/systemd/system/dynamic-rapl.service\nsudo rm /etc/systemd/system/drapl-resume.service\nsudo rm -rf /etc/systemd/system/dynamic-rapl.service.d\nsudo rm /usr/local/bin/drapld\nsudo rm /etc/drapl.conf\nsudo rm /var/log/drapl.log 2>/dev/null\nsudo systemctl daemon-reload",
+                  "codeBlock": "multi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "technical-breakdown",
+          "title": "Technical Breakdown",
+          "intro": "",
+          "subtopics": [
+            {
+              "title": "Core functionality",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The drapl runs as a systemd daemon <b>dynamic-rapl.service</b>. The daemon is a bash script <b>/usr/local/bin/drapld</b> that monitors <b>/etc/drapl.conf</b> and <b>/run/tlp/last_pwr</b> to apply the drapl profiles, the set of systemd services provided allow drapl to re-apply the configuration upon resume from suspend, hibernation or hybrid sleep."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>/run/tlp/last_pwr</b> outputs TLP's current power profile and the system's AC/Battery state. I.e:"
+                },
+                {
+                  "type": "code",
+                  "value": "$ cat /run/tlp/last_pwr\n1 0 # <Profile> <Power Supply> In this case 1=Balanced 0=AC",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "TLP power profiles: <b>Performance=0</b>, <b>Balanced=1</b>, <b>Power Saver=2</b>.<br>TLP power supply: <b>AC=0</b>, <b>Battery=1</b>"
+                },
+                {
+                  "type": "text",
+                  "value": "The daemon reads these values and maps them to one of the six drapl profiles, each with the user-defined PL1 and PL2 values from <b>/etc/drapl.conf</b>, and writes them to:"
+                },
+                {
+                  "type": "code",
+                  "value": "/sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0/constraint_0_power_limit_uw # PL1\n/sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0/constraint_1_power_limit_uw # PL2",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "The daemon reacts to the change in states for both tlp's values and the <b>.conf</b> file via <b>inotifywait</b> to watch for changes to either files, and once a change is detected the daemon re-evaluates the new system state and applies the update. Allowing auto-reload for new configuration and dynamic drapl profile switching."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "limitations",
+          "title": "Limitations and Prospect",
+          "intro": "",
+          "subtopics": [
+            {
+              "title": "Limitations and Prospect",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "- No option to control Tau (Time Window) for PL2 Turbo Boost yet.<br>- No perodic update to RAPL registers, only event-driven on state change.<br>- Only supports TLP<br>- Only supports systemd system service<br>- Only for Intel platforms<br>- I have not tested many Intel processors yet.<br>- Scope of the project is limited to laptops/battery powered systems."
+                }
+              ]
+            },
+            {
+              "title": "Devices currently tested",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "This list will grow overtime as I confirm support myself, feel free to let me know if it works on your system"
+                },
+                {
+                  "type": "code",
+                  "value": "i7-11850H - HP ZBook Studio G8",
+                  "codeBlock": "multi"
+                }
+              ]
+            },
+            {
+              "title": "To do",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Though it has not been a problem for me so far (which is impressive given the absolute dense nature of HP's EC chips), future versions will iteratively address these concerns or any other that you feel to bring up in the issues tab."
+                },
+                {
+                  "type": "text",
+                  "value": "The next primary goal is to make drapl support other commonly used power management tools like ppd and system76-power."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

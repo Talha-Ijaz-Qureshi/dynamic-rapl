@@ -1,0 +1,538 @@
+{
+  "compass": [
+    {
+      "topic": "Compass Docs. System",
+      "sections": [
+        {
+          "id": "introduction",
+          "title": "Introduction",
+          "intro": "Introducing Compass Docs. by Talha 'tal' Ijaz",
+          "subtopics": [
+            {
+              "title": "What is Compass Docs?",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs is an open-source documentation rendering system built with SvelteKit and IBM's Carbon Design System components from https://svelte.carbondesignsystem.com/. It provides a polished, reactive interface for creating and displaying documentation with minimal setup. Simply write your content in structured JSON files, and Compass Docs handles the rest, from rendering to navigation to theme management."
+                },
+                {
+                  "type": "note",
+                  "kind": "info",
+                  "message": "Use Cases",
+                  "value": "API documentation, technical guides, product documentation, knowledge bases, user manuals, and educational content."
+                }
+              ]
+            },
+            {
+              "title": "Key Features",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "<b>Dynamic Content Rendering:</b> Write documentation in JSON format and see it rendered instantly with full type safety."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Smart Navigation:</b> Auto-generated table of contents with scroll tracking, collapsible sections, and smooth scrolling to any section."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Multi-Source Support:</b> Switch between different documentation sets seamlessly without page reloads."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Theme System:</b> Six built-in themes including light, dark, and AMOLED modes with persistent user preferences."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Progress Tracking:</b> Visual indicators show readers exactly where they are in the documentation."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Static Site Generation:</b> Builds to static files deployable anywhere - GitHub Pages, Netlify, Vercel, or any web server."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Gorgeously Responsive:</b> Fully responsive interface that works beautifully on all devices."
+                }
+              ]
+            },
+            {
+              "title": "Tech-Stack",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs is built with modern web technologies: <b>SvelteKit 5</b> for the reactive framework, <b>IBM Carbon Design System</b> for UI components and design language, The framework is configured to use <b>TypeScript</b>"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "architecture",
+          "title": "Architecture & Design",
+          "intro": "Understanding how Compass Docs is structured will help you customize and extend it effectively.",
+          "subtopics": [
+            {
+              "title": "User Interface Components",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The UI consists of four main areas:"
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Table of Contents (ToC):</b> A collapsible sidebar that shows the document structure and tracks your reading position."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Main Content Area:</b> The central panel where documentation is rendered with proper formatting."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Preferences Panel:</b> A right sidebar for theme selection and display preferences."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Header with Source Selector:</b> Allows instant switching between different documentation sets."
+                },
+                {
+                  "type": "text",
+                  "value": "The UI design blends IBM's Carbon Design System components with custom Svelte components for a cohesive, professional appearance. All components are built with accessibility in mind, featuring proper ARIA labels, keyboard navigation, and semantic HTML."
+                }
+              ]
+            },
+            {
+              "title": "Content Structure",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs uses a hierarchical JSON structure that maps naturally to how documentation is organized:"
+                },
+                {
+                  "type": "code",
+                  "value": "JSON Data Structure\n\nTopic\n├── topic (string) - Main documentation title\n└── sections[] - Array of major chapters\n    └── Section\n        ├── id (string) - URL-friendly identifier\n        ├── title (string) - Section heading\n        ├── intro (string) - Section introduction\n        └── subtopics[] - Array of subsections\n            └── Subtopic\n                ├── title (string) - Subsection heading\n                └── blocks[] - Array of content blocks\n                    └── Block\n                        ├── type ('text' | 'code' | 'note')\n                        ├── value (string) - Content\n                        ├── codeBlock? ('single' | 'multi' | 'inline')\n                        ├── kind? ('info' | 'success' | 'warning' | 'error')\n                        └── message? (string) - Note title",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "This structure is defined as TypeScript interfaces in <b>src/lib/types/content.ts</b>, providing full type safety and autocomplete support when creating documentation."
+                }
+              ]
+            },
+            {
+              "title": "State Management",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs uses Svelte stores for reactive state management across the application:"
+                },
+                {
+                  "type": "text",
+                  "value": "<b>contentStore.ts</b> - Manages the current documentation source and provides a registry of all available sources. Automatically discovers JSON files in the data directory."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>preferences.ts</b> - Handles theme selection, heading transformation preferences (slugify/camelCase), and persists settings to localStorage for a consistent experience across sessions."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>toc.ts</b> - Controls the visibility state of the table of contents sidebar."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>menu.ts</b> - Manages the mobile menu state and navigation panel visibility."
+                },
+                {
+                  "type": "note",
+                  "kind": "info",
+                  "message": "Reactivity",
+                  "value": "All stores are reactive - when you update them, all dependent components automatically re-render with the new state."
+                }
+              ]
+            },
+            {
+              "title": "Rendering System",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The rendering system is powered by <b>src/routes/+page.svelte</b>, which dynamically generates the documentation page based on the current content source. It iterates through the JSON structure and renders appropriate components for each block type."
+                },
+                {
+                  "type": "text",
+                  "value": "Text blocks support URL detection and safe HTML rendering with XSS protection. Code blocks use Carbon's CodeSnippet component with syntax highlighting and copy functionality. Note blocks render as Carbon InlineNotification components with appropriate styling based on the kind (info, success, warning, error)."
+                },
+                {
+                  "type": "code",
+                  "value": "// Example rendering logic\n{#each $currentSource[0].sections as section}\n  <section id={section.id}>\n    <h2>{section.title}</h2>\n    <p>{@html section.intro}</p>\n    {#each section.subtopics as subtopic}\n      {#each subtopic.blocks as block}\n        {#if block.type === 'text'}\n          <p>{@html formatText(block.value)}</p>\n        {:else if block.type === 'code'}\n          <CodeSnippet code={block.value} />\n        {:else if block.type === 'note'}\n          <InlineNotification kind={block.kind} />\n        {/if}\n      {/each}\n    {/each}\n  </section>\n{/each}",
+                  "codeBlock": "multi"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "getting",
+          "title": "Getting Started",
+          "intro": "Set up your own Compass Docs site in minutes. This guide will walk you through installation, configuration, and creating your first documentation.",
+          "subtopics": [
+            {
+              "title": "Installation",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "First, ensure you have Node.js 18 or higher and Yarn 4.6.0+ installed on your system. Clone the Compass Docs repository and install dependencies:"
+                },
+                {
+                  "type": "code",
+                  "value": "# Clone the repository\ngit clone https://github.com/talha-ijaz-qureshi/compass-docs.git\ncd compass-docs\n\n# Install dependencies with Yarn\nyarn install\n\n# Start development server\nyarn run dev",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "The development server will start at http://localhost:5173 with hot module replacement enabled. Any changes you make to source files will be reflected immediately in the browser."
+                },
+                {
+                  "type": "note",
+                  "kind": "info",
+                  "message": "Package Manager",
+                  "value": "Compass Docs uses Yarn 4 with PnP (Plug'n'Play) for faster, more reliable dependency management. The .yarnrc.yml and .pnp.cjs files are already configured."
+                }
+              ]
+            },
+            {
+              "title": "Creating Your First Documentation",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Create a new JSON file in <b>src/lib/data/json/</b> with your documentation content. Let's create a simple getting started guide:"
+                },
+                {
+                  "type": "code",
+                  "value": "{\n  \"info\": [\n    {\n      \"topic\": \"My Project Documentation\",\n      \"sections\": [\n        {\n          \"id\": \"introduction\",\n          \"title\": \"Introduction\",\n          \"intro\": \"Welcome to my project!\",\n          \"subtopics\": [\n            {\n              \"title\": \"What is this?\",\n              \"blocks\": [\n                {\n                  \"type\": \"text\",\n                  \"value\": \"This is a simple description.\"\n                },\n                {\n                  \"type\": \"code\",\n                  \"value\": \"npm install my-package\",\n                  \"codeBlock\": \"single\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "The JSON structure follows a strict hierarchy: Topic -> Sections -> Subtopics -> Blocks. Each level serves a specific purpose in organizing your content."
+                }
+              ]
+            },
+            {
+              "title": "Importing Content",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "After creating your JSON file, create an import file in <b>src/lib/data/</b> to make it available to the application:"
+                },
+                {
+                  "type": "code",
+                  "value": "// src/lib/data/myproject.ts\nimport type { Topic } from '$lib/types/content';\nimport data from './json/my-project-documentation.json';\n\nconst myproject: Topic[] = data.info as Topic[];\nexport default myproject;",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "Compass Docs will automatically discover your new JSON file and add it to the source selector in the header. The file name is converted to title case (e.g., 'my-project-documentation.json' becomes 'My Project Documentation')."
+                },
+                {
+                  "type": "note",
+                  "kind": "success",
+                  "message": "Auto-Discovery",
+                  "value": "The contentStore automatically scans src/lib/data/json/ and registers all JSON files as documentation sources. No manual registration needed!"
+                }
+              ]
+            },
+            {
+              "title": "Setting Default Source",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "To set which documentation shows by default when users first visit your site, edit <b>src/lib/stores/contentStore.ts</b>:"
+                },
+                {
+                  "type": "code",
+                  "value": "// Import your default content\nimport myproject from '$lib/data/myproject';\n\n// Set as default source\nexport const currentSource = writable<Topic[]>(myproject);",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "This controls what documentation is displayed on initial page load. Users can still switch to other sources using the selector in the header."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "content",
+          "title": "Content Creation Guide",
+          "intro": "Learn how to write effective documentation using Compass Docs' content structure and features.",
+          "subtopics": [
+            {
+              "title": "Block Types Explained",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs supports three block types, each designed for specific content needs:"
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Text Blocks</b> are for paragraphs, descriptions, and general content. They support automatic URL detection and safe HTML rendering. Use them for explanations, instructions, and narrative content."
+                },
+                {
+                  "type": "code",
+                  "value": "{\n  \"type\": \"text\",\n  \"value\": \"Your paragraph text here. URLs like https://example.com are automatically converted to links.\"\n}",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Code Blocks</b> display code snippets with syntax highlighting and a copy button. They come in three variants: <b>single</b> for one-liners, <b>multi</b> for multi-line code, and <b>inline</b> for inline code within text."
+                },
+                {
+                  "type": "code",
+                  "value": "{\n  \"type\": \"code\",\n  \"value\": \"const greeting = 'Hello, World!';\",\n  \"codeBlock\": \"single\"\n}",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Note Blocks</b> highlight important information with visual emphasis. They support five kinds: <b>info</b> (blue), <b>success</b> (green), <b>warning</b> (yellow), <b>error</b> (red), and <b>warning-alt</b> (alternate warning style)."
+                },
+                {
+                  "type": "code",
+                  "value": "{\n  \"type\": \"note\",\n  \"kind\": \"info\",\n  \"message\": \"Important Note\",\n  \"value\": \"This information is crucial for understanding the concept.\"\n}",
+                  "codeBlock": "multi"
+                }
+              ]
+            },
+            {
+              "title": "Organizing Content",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Effective documentation follows a clear hierarchy. Start with a descriptive <b>topic</b> that represents the entire documentation set. Break content into logical <b>sections</b> - think of these as chapters in a book. Each section should focus on one major concept or area."
+                },
+                {
+                  "type": "text",
+                  "value": "Within sections, create <b>subtopics</b> for specific aspects or tasks. These become the linked items in your table of contents. Finally, use <b>blocks</b> to present the actual content in a scannable, digestible format."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "features",
+          "title": "Features & Functionality",
+          "intro": "This section covers the technical features and core functionality of Compass Docs.",
+          "subtopics": [
+            {
+              "title": "Dynamic Table of Contents",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The table of contents in <b>src/lib/components/Toc.svelte</b> is automatically generated from your JSON structure. It provides a complete navigation hierarchy with collapsible sections and smooth scrolling to any part of your documentation."
+                },
+                {
+                  "type": "text",
+                  "value": "As users scroll through the documentation, an IntersectionObserver tracks their position and highlights the current section in the ToC. This provides constant contextual awareness of where they are in the documentation."
+                },
+                {
+                  "type": "text",
+                  "value": "The ToC includes a visual progress indicator showing how far the user has progressed through the current documentation. Sections automatically expand and collapse based on the user's position, keeping the sidebar focused and uncluttered."
+                }
+              ]
+            },
+            {
+              "title": "Theme System",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs includes six professionally designed themes powered by Carbon Design System's color tokens. Users can switch themes via the preferences panel, and their choice is persisted in localStorage."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>White Theme:</b> Clean, high-contrast light theme perfect for well-lit environments."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Gray 10:</b> Subtle light theme with reduced contrast for extended reading."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Gray 80:</b> Soft dark theme for low-light conditions."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Gray 90:</b> Darker theme with good contrast."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>Dark (G100):</b> True dark mode for minimal eye strain."
+                },
+                {
+                  "type": "text",
+                  "value": "<b>AMOLED:</b> Pure black (#000000) theme optimized for OLED screens to save battery."
+                },
+                {
+                  "type": "note",
+                  "kind": "info",
+                  "message": "Customization",
+                  "value": "Themes use CSS custom properties (--cds-*) from Carbon Design System. You can create custom themes by overriding these variables."
+                }
+              ]
+            },
+            {
+              "title": "Multi-Source Documentation",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs can host multiple documentation sets in a single deployment. The source selector in the header allows instant switching between different documentation topics without page reloads."
+                },
+                {
+                  "type": "text",
+                  "value": "This is perfect for: documenting multiple related projects, providing documentation in different languages, separating user guides from API references, or maintaining documentation for different product versions."
+                },
+                {
+                  "type": "text",
+                  "value": "The <b>contentStore</b> automatically discovers all JSON files in <b>src/lib/data/json/</b> and registers them as available sources. File names are converted to human-readable titles (e.g., 'api-reference.json' becomes 'Api Reference')."
+                }
+              ]
+            },
+            {
+              "title": "Preferences Panel",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "The preferences panel in <b>src/lib/components/rightpanel.svelte</b> provides user customization options. Currently includes theme selection with six built-in themes and heading transformation options (slugify or camelCase)."
+                },
+                {
+                  "type": "text",
+                  "value": "All preferences are stored in localStorage and persist across sessions. The panel is easily extensible - add new preferences by creating store values in <b>src/lib/stores/preferences.ts</b> and adding UI controls in the panel component."
+                },
+                {
+                  "type": "note",
+                  "kind": "info",
+                  "message": "Future Features",
+                  "value": "Planned additions include font size adjustment, code theme selection, and custom color accent choices."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "customization",
+          "title": "Customization & Extension",
+          "intro": "(More features will be supported in future releases)",
+          "subtopics": [
+            {
+              "title": "Styling & Theming",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Compass Docs uses a combination of Carbon Design System tokens, Tailwind utilities, and component-scoped styles. Global styles are in <b>src/app.css</b>, component styles in individual <b>.svelte</b> files, and Carbon tokens provide consistent theming."
+                },
+                {
+                  "type": "text",
+                  "value": "To create a custom theme, override Carbon CSS custom properties in your styles. The system uses <b>--cds-background</b>, <b>--cds-text-primary</b>, <b>--cds-link-primary</b>, and many more tokens. See the AMOLED theme implementation in <b>rightpanel.svelte</b> for an example."
+                },
+                {
+                  "type": "code",
+                  "value": ":global(body.my-theme) {\n  --cds-background: #1a1a2e;\n  --cds-text-primary: #eaeaea;\n  --cds-link-primary: #0f9d58;\n  --cds-ui-01: #16213e;\n  /* Override other tokens as needed */\n}",
+                  "codeBlock": "multi"
+                }
+              ]
+            },
+            {
+              "title": "Adding New Block Types",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "To support new content types, first extend the TypeScript interfaces in <b>src/lib/types/content.ts</b>:"
+                },
+                {
+                  "type": "code",
+                  "value": "// Add new block type\nexport type BlockType = 'text' | 'code' | 'note' | 'image' | 'video';\n\n// Extend Block interface\nexport interface Block {\n  type: BlockType;\n  value: string;\n  // Add new optional fields\n  src?: string;\n  alt?: string;\n  caption?: string;\n  // ... existing fields\n}",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "text",
+                  "value": "Then add rendering logic in <b>src/routes/+page.svelte</b>:"
+                },
+                {
+                  "type": "code",
+                  "value": "{#if block.type === 'image'}\n  <figure>\n    <img src={block.src} alt={block.alt} />\n    {#if block.caption}\n      <figcaption>{block.caption}</figcaption>\n    {/if}\n  </figure>\n{/if}",
+                  "codeBlock": "multi"
+                }
+              ]
+            },
+            {
+              "title": "Custom Components",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "Create reusable components in <b>src/lib/components/</b> and import them where needed. Follow the existing component patterns: accept props via TypeScript interfaces, use Carbon components where appropriate, include responsive styles with media queries, and emit events for parent communication."
+                },
+                {
+                  "type": "text",
+                  "value": "For example, to create a custom callout component, create <b>Callout.svelte</b>, define its props interface, style it to match the design system, and use it in your page component by importing and including it in the template."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "examples",
+          "title": "Blocks",
+          "intro": "Example blocks of Compass Docs.",
+          "subtopics": [
+            {
+              "title": "All Block Types",
+              "blocks": [
+                {
+                  "type": "text",
+                  "value": "This is a text block demonstrating how regular paragraphs appear. Text blocks support automatic URL conversion - for example, https://github.com becomes a clickable link. You can write natural content without worrying about formatting."
+                },
+                {
+                  "type": "code",
+                  "value": "// This is a single-line code block\nconst message = 'Perfect for short commands or snippets';"
+                },
+                {
+                  "type": "code",
+                  "value": "// This is a multi-line code block\nfunction greet(name) {\n  return `Hello, ${name}!`;\n}\n\nconst greeting = greet('World');\nconsole.log(greeting);",
+                  "codeBlock": "multi"
+                },
+                {
+                  "type": "note",
+                  "value": "Info notes are perfect for providing additional context, tips, or explanations that complement the main content.",
+                  "kind": "info",
+                  "message": "Info Note Example"
+                },
+                {
+                  "type": "note",
+                  "value": "Success notes celebrate achievements, confirm completed steps, or highlight positive outcomes.",
+                  "kind": "success",
+                  "message": "Success Note Example"
+                },
+                {
+                  "type": "note",
+                  "value": "Warning notes alert users to potential issues, gotchas, or things to watch out for.",
+                  "kind": "warning",
+                  "message": "Warning Note Example"
+                },
+                {
+                  "type": "note",
+                  "value": "Error notes highlight critical issues, breaking changes, or problems that must be addressed.",
+                  "kind": "error",
+                  "message": "Error Note Example"
+                },
+                {
+                  "type": "note",
+                  "value": "Warning-alt provides an alternative warning style with different visual emphasis.",
+                  "kind": "warning-alt",
+                  "message": "Alternative Warning Example"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
