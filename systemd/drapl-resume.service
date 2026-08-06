@@ -1,0 +1,14 @@
+# Dynamic RAPL | drapl
+# Copyright (c) 2026 - Talha "tal" Ijaz
+# Licensed under the MIT License. See LICENSE file in the project root.
+
+[Unit]
+Description=drapl apply limits after resume
+After=suspend.target hibernate.target hybrid-sleep.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/drapld --apply
+
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target

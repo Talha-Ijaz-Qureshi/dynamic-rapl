@@ -1,0 +1,103 @@
+#!/bin/bash
+# drapld daemon to enforce per‑state Intel RAPL MMIO power limits
+
+# Dynamic RAPL | drapl
+# Copyright (c) 2026 - Talha "tal" Ijaz
+# Licensed under the MIT License. See LICENSE file in the project root.
+# https://github.com/Talha-Ijaz-Qureshi/dynamic-rapl
+
+CONFIG_FILE="/etc/drapl.conf"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+else
+    echo "Error: Config file $CONFIG_FILE not found." >&2
+    echo "Please run the install script or create the config manually." >&2
+    exit 1
+fi
+
+if [[ -z "$AC_BAL_PL1" || -z "$AC_BAL_PL2" || -z "$BAT_BAL_PL1" || -z "$BAT_BAL_PL2" ]]; then
+    echo "Error: Config file $CONFIG_FILE is incomplete or corrupted." >&2
+    exit 1
+fi
+
+STATE_PERFORMANCE=${STATE_PERFORMANCE:-0}
+STATE_BALANCED=${STATE_BALANCED:-1}
+STATE_POWERSAVE=${STATE_POWERSAVE:-2}
+
+TLP_STATE_FILE=${TLP_STATE_FILE:-/run/tlp/last_pwr}
+RAPL_MMIO_PATH=${RAPL_MMIO_PATH:-/sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0}
+LOG_ENABLED=${LOG_ENABLED:-0}
+LOG_FILE=${LOG_FILE:-/var/log/drapl.log}
+
+w2uw() { echo $(( $1 * 1000000 )); }
+
+log_msg() {
+    if [[ "$LOG_ENABLED" -eq 1 ]]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> "$LOG_FILE"
+    fi
+}
+
+apply_limits() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        source "$CONFIG_FILE"
+    fi
+
+    [[ -f "$TLP_STATE_FILE" ]] || return
+
+    local TLP_STATE=$(awk '{print $1}' "$TLP_STATE_FILE" 2>/dev/null)
+    local TLP_SOURCE=$(awk '{print $2}' "$TLP_STATE_FILE" 2>/dev/null)
+    local pl1 pl2 mode_desc
+
+    if [[ "$TLP_SOURCE" == "0" ]]; then
+        if [[ "$TLP_STATE" == "$STATE_POWERSAVE" ]]; then
+            pl1=$(w2uw $AC_PS_PL1)
+            pl2=$(w2uw $AC_PS_PL2)
+            mode_desc="AC Power Saver"
+        elif [[ "$TLP_STATE" == "$STATE_PERFORMANCE" ]]; then
+            pl1=$(w2uw $AC_PERF_PL1)
+            pl2=$(w2uw $AC_PERF_PL2)
+            mode_desc="AC Performance"
+        else
+            pl1=$(w2uw $AC_BAL_PL1)
+            pl2=$(w2uw $AC_BAL_PL2)
+            mode_desc="AC Balanced"
+        fi
+    else
+        if [[ "$TLP_STATE" == "$STATE_POWERSAVE" ]]; then
+            pl1=$(w2uw $BAT_PS_PL1)
+            pl2=$(w2uw $BAT_PS_PL2)
+            mode_desc="Battery Power Saver"
+        elif [[ "$TLP_STATE" == "$STATE_PERFORMANCE" ]]; then
+            pl1=$(w2uw $BAT_PERF_PL1)
+            pl2=$(w2uw $BAT_PERF_PL2)
+            mode_desc="Battery Performance"
+        else
+            pl1=$(w2uw $BAT_BAL_PL1)
+            pl2=$(w2uw $BAT_BAL_PL2)
+            mode_desc="Battery Balanced"
+        fi
+    fi
+    echo "$pl1" > "$RAPL_MMIO_PATH/constraint_0_power_limit_uw" 2>/dev/null
+    echo "$pl2" > "$RAPL_MMIO_PATH/constraint_1_power_limit_uw" 2>/dev/null
+    log_msg "Updated RAPL MMIO: $pl1 / $pl2 µW ($mode_desc)"
+}
+
+cleanup() {
+    log_msg "Daemon terminated."
+    exit 0
+}
+trap cleanup SIGTERM SIGINT
+
+if [[ "$1" == "--apply" ]]; then
+    apply_limits
+    exit 0
+fi
+
+log_msg "Daemon started."
+apply_limits
+
+while inotifywait -e close_write "$TLP_STATE_FILE" "$CONFIG_FILE" 2>/dev/null; do
+    sleep 1
+    apply_limits
+done

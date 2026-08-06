@@ -1,0 +1,16 @@
+# Dynamic RAPL | drapl
+# Copyright (c) 2026 - Talha "tal" Ijaz
+# Licensed under the MIT License. See LICENSE file in the project root.
+
+[Unit]
+Description=Dynamic RAPL (drapl) daemon to enforce per‑state CPU power limits
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/drapld
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
