@@ -204,6 +204,4 @@ Your contributions are very welcomed, whether its opening an issue or a PR. Feel
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
-Dynamic RAPL | drapl
-
-Copyright (c) 2026 - Talha "tal" Ijaz
+2026 - Dynamic RAPL (drapl) by Talha "tal" Ijaz
