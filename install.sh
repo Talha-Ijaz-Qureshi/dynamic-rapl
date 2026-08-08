@@ -11,11 +11,13 @@ if ! systemctl is-active --quiet tlp; then
     exit 1
 fi
 
-RAPL_PATH="/sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0"
+RAPL_MMIO_PATH="/sys/class/powercap/intel-rapl-mmio/intel-rapl-mmio:0"
+RAPL_DEFAULT_PATH="/sys/class/powercap/intel-rapl:0"
 
-if [[ -f "$RAPL_PATH/constraint_0_power_limit_uw" ]]; then
-    DEFAULT_PL1=$(( $(cat "$RAPL_PATH/constraint_0_power_limit_uw") / 1000000 ))
-    DEFAULT_PL2=$(( $(cat "$RAPL_PATH/constraint_1_power_limit_uw") / 1000000 ))
+
+if [[ -f "$RAPL_DEFAULT_PATH/constraint_0_power_limit_uw" ]]; then
+    DEFAULT_PL1=$(( $(cat "$RAPL_DEFAULT_PATH/constraint_0_power_limit_uw") / 1000000 ))
+    DEFAULT_PL2=$(( $(cat "$RAPL_DEFAULT_PATH/constraint_1_power_limit_uw") / 1000000 ))
     echo "System defaults: PL1=${DEFAULT_PL1}W, PL2=${DEFAULT_PL2}W"
 else
     echo "Installation failed, RAPL MMIO path was not found." >&2
@@ -92,7 +94,7 @@ BAT_PS_PL2=$DEFAULT_PL2
 
 # Default paths and values, you don't need to change these.
 # TLP_STATE_FILE=/run/tlp/last_pwr
-# RAPL_MMIO_PATH=$RAPL_PATH
+# RAPL_MMIO_PATH=$RAPL_MMIO_PATH
 # LOG_ENABLED=1
 # LOG_FILE=/var/log/drapl.log
 # STATE_PERFORMANCE=0
