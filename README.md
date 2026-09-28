@@ -190,7 +190,9 @@ This list will grow overtime as I confirm support myself, feel free to let me kn
 | Brand | CPU | Laptop |
 | :--- | :--- | --- |
 | HP | i7-11850H | ZBook Studio G8 |
+| HP | i7-1195G7 | Pavilion Laptop 15-eg10xxxx |
 | Lenovo | i7-9850H | ThinkPad P53 |
+
 
 ### To do
 
